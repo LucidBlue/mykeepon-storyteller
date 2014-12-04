@@ -1,0 +1,292 @@
+/*
+	MuseumKeepon controller: v 2.0. Uses servos for all motors.
+	-----------------------------------------------------------
+	Slave module to the ArduinoController python module
+ 
+	Ahsan Nawroj
+	Updated: 03/11/2014
+*/
+
+#include <Arduino.h>
+#include <string.h>
+#include <Servo.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+//#include "museumKeepon.h"
+
+// --------------------------------------------------------------------------------
+// 
+//  PRE-PROCESSOR DIRECTIVES, DEFINITIONS
+//
+// --------------------------------------------------------------------------------
+#define SERVO_PIN(x) (x+2)	// all servo pins are connected from 2 onwards
+#define ROLL 0
+#define BOP 1
+#define TILT 2
+#define PAN 3
+#define SINGLE_BOP_DELAY 600 // --CALIBRATE--
+#define BOP_OFF_SPEED 90 // --CALIBRATE--
+#define DEFAULT_BOP_SPEED 45 // --CALIBRATE--
+
+// --------------------------------------------------------------------------------
+// 
+//  G L O B A L S
+//
+// --------------------------------------------------------------------------------
+Servo keeponServos[4];	// 0 = roll, 1 = bop, 2 = tilt, 3 = pan
+int servoAngles[4];
+String commandString;
+bool commandsAreRelative = true;
+bool newCommandReceived = false;
+int panCommand, rollCommand, ponCommand, tiltCommand;
+
+ 
+// ISR(TIMER1_COMPA_vect) {
+//     keeponServos[BOP].write(90); 
+// }
+
+
+// --------------------------------------------------------------------------------
+// 
+//  M A I N   D R I V E R   F U N C T I O N S
+//
+// --------------------------------------------------------------------------------
+void setup () {
+	for(int nServo = 0;nServo < 4;nServo++)  {
+		keeponServos[nServo].attach(SERVO_PIN(nServo));
+		servoAngles[nServo] = 90; // default starting location
+	}
+	// modifications depending on the servos
+	servoAngles[1]=89;
+
+	motorStatusUp();
+
+	Serial.begin(9600);
+	Serial.println("Completed setup");  
+}
+
+
+void loop () {
+	//demoMotorFunctionality(); // show by manual tweaking that motors work
+	//testAllSweeps();
+	demo2();
+	resetMotorPositions();
+
+	//test_panSweep();
+	//test_tiltSweep();
+	//test_rollSweep();
+	//test_manyBops();
+	
+}  
+
+
+// --------------------------------------------------------------------------------
+// 
+//  U T I L I T Y   F U N C T I O N S
+//
+// --------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------
+// Command parsing from serial stream
+// ------------------------------------------------------------------------
+// 	Expected string input:
+// 		GGpXrYtZbT
+// 		GG = "ab" (absolute), "re" (relative)
+// 		pX = pan value X
+// 		rY = roll value Y
+// 		tZ = tilt value Z
+// 		bT = bop value T (count of how many times to bop)
+// 
+// 	Absolute positions 0-180 
+// 	Relative pan positions 90-180 for positive 0 to 90, 90-0 for negative 0 to 90
+// 		sending 90 does no position change
+
+void checkForCommands() {
+	newCommandReceived = false;
+	if (Serial.available() <= 0) return; // leave right away 
+
+	char newByte; 	commandString = ""; // forget last command string
+	while (Serial.available() > 0) {  // read new command in
+		newByte = (char)Serial.read(); 
+		commandString += newByte; 	delay(10);
+		if (newByte == '\0') break;
+	} Serial.println ("received: " + commandString); // return read command
+
+	if (commandString == "" || commandString.length() < 10) return; // bad command
+
+	// relative vs. absolute commands
+	if (commandString[0] == 'a' && commandString[0] == 'b') commandsAreRelative = false;
+	else if (commandString[0] == 'r' && commandString[0] == 'e') commandsAreRelative = true;
+	
+	// read actual command vars in
+	int i = 2, j=0, tmp; // read the command into variables
+	while (commandString[i] != '\0') {
+		if (commandString[i] < '0' || commandString[i] > '9') { // a letter  
+			for (j=i+1;j<i+5;j++)   // find the number after this letter
+				if (commandString[j]=='\0' || commandString[j]<'0' || commandString[j]>'9') 
+					tmp = (commandString.substring(i+1,j)).toInt();
+
+			switch (commandString[i]) {
+			case 'p': panCommand = tmp; break;
+			case 't': tiltCommand = tmp; break;
+			case 'r': rollCommand = tmp; break;
+			case 'b': ponCommand = tmp; break;
+			} 
+			i = j;  // read next letter
+		} i++;
+	} newCommandReceived = true;	
+}
+
+// ------------------------------------------------------
+// Pan command angle between -90 (all the way left) and 90 (all the way right)
+// ------------------------------------------------------
+// relative pan
+void panBy (int relativeAngle) {
+	keeponServos[PAN].write(constrain(keeponServos[PAN].read() + relativeAngle, 0, 180));
+}
+// absolute pan
+void panTo (int absoluteAngle) {
+	keeponServos[PAN].write(constrain(absoluteAngle, 0, 180));
+}
+
+// ------------------------------------------------------
+// Tilt command angle between -90 (all the way back) and 90 (all the way forward)
+// ------------------------------------------------------
+// relative tilt
+void tiltBy (int relativeAngle) {
+	keeponServos[TILT].write(constrain(keeponServos[TILT].read() + relativeAngle, 0, 180));
+}
+// absolute tilt
+void tiltTo (int absoluteAngle) {
+	keeponServos[TILT].write(constrain(absoluteAngle, 0, 180));
+}
+
+// ------------------------------------------------------
+// Roll command angle is relative position from current. 
+// ------------------------------------------------------
+// relative roll
+void rollBy (int relativeAngle) {
+	keeponServos[ROLL].write(constrain(keeponServos[ROLL].read() + relativeAngle, 0, 180));
+}
+// absolute roll
+void rollTo (int absoluteAngle) {
+	keeponServos[ROLL].write(constrain(absoluteAngle, 0, 180));
+}
+
+
+// WARNING: BLOCKING CALL
+// ------------------------------------------------------
+// Bop command gives number of bops to make. 
+// ------------------------------------------------------
+void blockingBopCnt (int cnt) {
+	keeponServos[BOP].write(DEFAULT_BOP_SPEED);
+	delay(SINGLE_BOP_DELAY*cnt);
+	keeponServos[BOP].write(BOP_OFF_SPEED);
+}
+
+void bopCnt (int cnt) {
+	keeponServos[BOP].write(DEFAULT_BOP_SPEED);
+	setBopTimer(SINGLE_BOP_DELAY*cnt);
+}
+
+
+void setBopTimer (long tt) {
+	cli();          // disable global interrupts
+    TCCR1A = 0;     // set entire TCCR1A register to 0
+    TCCR1B = 0;     // same for TCCR1B
+    OCR1A = tt;	// set compare match register to desired timer count:
+    TCCR1B |= (1 << WGM12);	// turn on CTC mode:
+    TCCR1B |= (1 << CS10); // Set CS10 and CS12 bits for 1024 prescaler:
+    TCCR1B |= (1 << CS12);
+    TIMSK1 |= (1 << OCIE1A); // enable timer compare interrupt:
+    sei(); // enable global interrupts:
+}
+
+
+// ------------------------------------------------------
+// Freeze all motors 
+// ------------------------------------------------------
+void resetMotorPositions () {
+	for(int nServo = 0;nServo < 4;nServo++)  {
+		keeponServos[nServo].attach(SERVO_PIN(nServo));
+		servoAngles[nServo] = 90; // default starting location
+	}
+}
+
+
+
+// ------------------------------------------------------
+//	Update motor locations
+// ------------------------------------------------------
+void motorStatusUp () {
+	for(int nServo = 0;nServo < 4;nServo++)  {
+		keeponServos[nServo].write(servoAngles[nServo]);
+	}	
+}
+
+void printServoAngles() {
+	for (int i=0;i<3;i++) {	Serial.print(servoAngles[i]); Serial.print(", "); }
+	Serial.print(servoAngles[3]); Serial.println("");
+}
+
+
+// --------------------------------------------------------------------------------
+// 
+//  T E S T I N G   F U N C T I O N S
+//
+// --------------------------------------------------------------------------------
+
+// read external pots, set servos to pot inputs
+void demoMotorFunctionality () {
+	pinMode(A0, INPUT);
+	pinMode(A1, INPUT);
+	pinMode(A2, INPUT);
+	pinMode(A3, INPUT);
+	int potPins[4] = {A0, A1, A2, A3};
+	int sensitivity[4] = {10, 10, 20, 20};
+	while (1) {
+		for (int i=0; i < 4; i++) {
+			int j = analogRead(potPins[i]);
+			j=(int) constrain(j*sensitivity[i] - 512*(sensitivity[i]-1), 0, 1023);
+			servoAngles[i] = map(j, 0, 1023, 0, 180);
+		}
+		printServoAngles();
+		motorStatusUp();
+		delay(10);
+	}
+}
+
+// sweep tilt and roll back and forth, bop once every two seconds
+void demo2(){
+	int testDelay = 25;
+	for (int i = 20; i < 160; i++) { tiltTo(i); delay(testDelay); }
+	blockingBopCnt(3);
+	for (int i = 160; i > 20; i--) { tiltTo(i); delay(testDelay); }
+
+	for (int i = 20; i < 160; i++) { rollTo(i); delay(testDelay); }
+	blockingBopCnt(3);
+	for (int i = 160; i > 20; i--) { rollTo(i); delay(testDelay); }
+}
+
+
+// sweep through 0 to 180 for each servo
+void testAllSweeps() {
+	for (int k=0; k<3; k++) {
+		if (k==1) { 
+			keeponServos[k].write(45); delay(1500); 
+			keeponServos[k].write(90); 
+			continue; 
+		}
+		for (int i = 20; i < 160; i++) {
+			keeponServos[k].write(i);
+			delay(10);
+		}	
+		for (int i = 160; i > 20; i--) {
+			keeponServos[k].write(i);
+			delay(10);
+		}	
+	}
+}
+
+
+

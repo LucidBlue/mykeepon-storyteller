@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE SABLE PUBLIC "-//SABLE//DTD SABLE speech mark up//EN" 
+        "Sable.v0_2.dtd"
+[]>
+<SABLE>
+<SPEAKER NAME="us1_mbrola">
+This story is called <BREAK LEVEL="LARGE"/> The Miser and His Gold.
+<BREAK LEVEL="LARGE"/>
+
+<RATE SPEED="-8%">
+Once upon a time, there was a Miser who used to hide his gold at the foot of a tree in his garden; but every week he would dig it up and admire his <PRON SUB="welth">wealth.</PRON> A robber, who had noticed this, went and dug up the gold and took it. When the Miser came to admire his treasure, he found nothing but the empty hole. He tore his hair, and raised such an outcry that all the neighbors came around him, and he told them how he used to come and visit his treasure. <BREAK LEVEL= "LARGE"/> <PITCH BASE= "+20%"> " "Did you ever take any of it out?" </PITCH> asked one of them. <BREAK LEVEL= "LARGE"/> <PITCH BASE= "+20%"> "No," </PITCH> he said, <PITCH BASE= "+20%"> "I only came to look at it."<BREAK LEVEL= "LARGE"/> "Then come again and look at the hole," </PITCH> said a neighbor;  <PITCH BASE="20%">"it will do you just as much good."</PITCH></RATE>
+
+</SPEAKER>
+</SABLE>

@@ -1,0 +1,18 @@
+// sweep through 0 to 180 for each servo
+void testAllSweeps() {
+	while(1) {
+		int testDelay = 1;
+		for (int k=0; k<3; k++) {
+			if (k==BOP) { 
+				bopCnt(3);
+			} else {
+				for (int i = 20; i < 160; i++) {
+					keeponServos[k].write(i); delay_sft(testDelay);
+				}	
+				for (int i = 160; i > 20; i--) {
+					keeponServos[k].write(i); delay_sft(testDelay);
+				}	
+			}
+		}
+	}
+}

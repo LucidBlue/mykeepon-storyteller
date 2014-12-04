@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE SABLE PUBLIC "-//SABLE//DTD SABLE speech mark up//EN" 
+        "Sable.v0_2.dtd"
+[]>
+<SABLE>
+<SPEAKER NAME="us1_mbrola">
+This story is called <BREAK LEVEL="LARGE"/> Two Travelers and a Bear.
+
+<RATE SPEED="-8%">
+Two Men were traveling through a forest when all at once, a <EMPH>huge</EMPH> <EMPH>Bear</EMPH> crashed out of the brush near them. One of the men, thinking of his own safety, climbed a tree. The other, unable to fight the savage beast alone, threw himself on the ground and lay still. The Bear snuffed at the Man's head awhile, and then walked away. The Man in the tree climbed down. <BREAK LEVEL="LARGE"/><PITCH BASE="20%">"It looked like that Bear whispered in your <PRON SUB="eer">ear,"</PRON></PITCH> he said. <BREAK LEVEL="LARGE"/><PITCH BASE="20%">"What did he tell you?"</PITCH> <BREAK LEVEL="LARGE"/><PITCH BASE="20%">"He said,"</PITCH> answered the other, <BREAK LEVEL="LARGE"/><PITCH BASE="20%">"that it was not wise to keep company with a fellow who would dessert his friend in a moment of danger."</PITCH>
+</RATE>
+</SPEAKER>
+</SABLE>

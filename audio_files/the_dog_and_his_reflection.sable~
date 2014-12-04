@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE SABLE PUBLIC "-//SABLE//DTD SABLE speech mark up//EN" 
+        "Sable.v0_2.dtd"
+[]>
+<SABLE>
+<SPEAKER NAME="us1_mbrola">
+The Dog and His Reflection.
+
+<!--v=positive-->
+<!--i=strong-->
+<!--a=walk-->
+
+<RATE SPEED="-10%">
+
+A dog was walking home with his dinner, a large slab of meat, in his mouth. <BREAK LEVEL="LARGE"/>On his way home, he walked by a river. <BREAK LEVEL="LARGE"/>Looking into the river, he saw another dog with a handsome chunk of meat in his mouth. <BREAK LEVEL="LARGE"/><PITCH BASE="20%">I want <EMPH>that</EMPH> meat <EMPH>too</EMPH></PITCH><BREAK LEVEL="LARGE"/> thought the dog, and he snapped at the dog to grab his meat which caused him to <EMPH>drop</EMPH> his <EMPH>dinner</EMPH> in the river.
+</RATE>
+</SPEAKER>
+</SABLE>
