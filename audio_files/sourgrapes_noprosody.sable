@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE SABLE PUBLIC "-//SABLE//DTD SABLE speech mark up//EN" 
+        "Sable.v0_2.dtd"
+[]>
+<SABLE>
+<SPEAKER NAME="us1_mbrola">
+This story is called <BREAK LEVEL="LARGE"/> Sour Grapes.
+<BREAK LEVEL="LARGE"/>
+
+<PITCH RANGE="-50%">
+<RATE SPEED="-8%">
+A very hungry fox walked into a vineyard where there was an ample supply of luscious looking grapes. Grapes had never looked so good, and the fox was <PRON SUB="faamishd">famished.</PRON> However, the grapes hung higher than the fox could reach. He jumped and stretched and hopped and reached and jumped some more trying to get those yummy grapes, but to no avail. No matter what he tried, he could not reach the grapes. He wore himself out jumping and jumping to get the grapes.
+"Those grapes surely must be sour." he said as he walked away. "I wouldn't eat them if they were served to me on a silver platter."
+</RATE>
+</PITCH>
+</SPEAKER>
+</SABLE>

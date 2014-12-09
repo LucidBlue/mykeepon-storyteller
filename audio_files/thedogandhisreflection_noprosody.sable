@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!DOCTYPE SABLE PUBLIC "-//SABLE//DTD SABLE speech mark up//EN" 
+        "Sable.v0_2.dtd"
+[]>
+<SABLE>
+<SPEAKER NAME="us1_mbrola">
+This story is called <BREAK LEVEL="LARGE"/> The Dog and His Reflection.
+
+
+<PITCH RANGE="-50%">
+<RATE SPEED="-8%">
+A dog was walking home with his dinner, a large slab of meat, in his mouth. On his way home, he walked by a river. Looking into the river, he saw another dog with a handsome chunk of meat in his mouth. "I want that meat too" thought the dog, and he snapped at the dog to grab his meat which caused him to drop his dinner in the river.
+</RATE>
+</PITCH>
+</SPEAKER>
+</SABLE>

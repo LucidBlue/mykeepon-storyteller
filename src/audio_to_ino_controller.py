@@ -21,13 +21,28 @@ def main():
 	ino_pub = rospy.Publisher('controller_data', ControllerMsg)
 	
 	# Subscribe to the audio data stream
-	rospy.Subscriber('audio_data', AudioMsg, audio_callback, queue_size=1)
+	rospy.Subscriber('audio_data', ControllerMsg, audio_callback2, queue_size=1)
 	
 	rospy.loginfo("Controller node inititalized.")
 	
 	# Allow the program to listen without blocking
 	rospy.spin()
 
+def audio_callback2(data):
+	pan 	= data.pan
+	tilt 	= data.tilt
+	roll 	= data.roll
+	bop = data.bop
+	controller_msg = ControllerMsg()
+	#print(current_pos)
+
+	controller_msg.ID = 0
+	controller_msg.pan = pan
+	controller_msg.tilt = tilt
+	controller_msg.roll = roll
+	controller_msg.bop = bop
+	rospy.loginfo('sending: pan='+str(pan)+' tilt='+str(tilt)+' roll='+str(roll) + ' bop='+str(bop))
+	ino_pub.publish(controller_msg)
 
 def audio_callback(data):
 	valence 	= data.valence

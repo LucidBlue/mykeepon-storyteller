@@ -4,7 +4,9 @@
 import roslib; roslib.load_manifest('mykeepon_storyteller')
 import rospy
 import math
-from mykeepon_storyteller.msg import AudioMsg
+import random
+#from mykeepon_storyteller.msg import AudioMsg
+from mykeepon_storyteller.msg import ControllerMsg
 #from realtime_audio_capture import freq_power_from_fft
 from time import sleep
 
@@ -15,14 +17,15 @@ import pyaudio
 import wave
 from time import clock, time
 
-from states_and_actions import valence_list, intensity_list, action_list
+from states_and_actions import *
 from convert_labels import convert_labels
 
 #general
 import sys
+import copy
 
-delay = .5
-CHUNK = 2**8 #too long and fft will over-smooth freq data
+delay = 0
+CHUNK = 2**9 #too long and fft will over-smooth freq data
 
 def main():
 
@@ -32,18 +35,28 @@ def main():
 	# Initialize ROS node
 	rospy.init_node('audio_publisher')
 	# Create publisher to send out ControllerMsg messages
-	audio_pub = rospy.Publisher('audio_data', AudioMsg)
+	pub = rospy.Publisher('audio_data', ControllerMsg)
 	
 	#open wav file and read parameters
 	speechfile = sys.argv[1]
-	wf = wave.open(speechfile, 'rb')
+	choice = sys.argv[2]
+	voice = sys.argv[3]
+	
+	if voice == '-p':
+		wf = wave.open(speechfile, 'rb')
+	elif voice == '-n':
+		speechfile_np = speechfile[:-4] + '_noprosody.wav'
+		wf = wave.open(speechfile_np)
 	(channels,sample_width,rate,frames,comptype,compname) = wf.getparams()
 	print("channels %d, swidth %d, rate %f, frames %d" %(channels, sample_width, rate, frames))
 	
-	"""
+	
 	label_file = speechfile[:-4] + '_labels.txt'
 	actions = convert_labels(label_file, CHUNK, frames, rate, delay)
-	"""
+	actions_length = int(float(frames)/(CHUNK)) + 1
+	#print(actions)
+	#print(actions_length)
+	
 	#initialize PyAudio
 	p = pyaudio.PyAudio()
 	
@@ -57,10 +70,7 @@ def main():
 	data = wf.readframes(CHUNK)
 	#drv = rv_discrete(values=((0, 1, 2), (0.8, 0.1, 0.1)))
 	
-	
-	actions_length = int(float(frames)/(CHUNK)) + 1
-	#print(actions_length)
-	
+	"""
 	actions = [('none', 'none', 'none') for x in range(actions_length)]
 	#print(actions)
 	
@@ -80,27 +90,136 @@ def main():
 	actions[320] = ('none', 	'none',		'stop')
 	actions[350] = ('none', 	'none',		'look down')
 	actions[370] = ('none', 	'none',		'stop')
-	actions[400] = ('none', 	'none',		'extend')
+	actions[400] = ('none', 	'none',		'stop')
 	actions[420] = ('none', 	'none',		'stop')
-	actions[440] = ('stop', 	'stop',		'stop')
-	actions[442] = ('stop', 	'stop',		'stop')
+	actions[440] = ('none', 	'none',		'stop')
+	actions[442] = ('none', 	'none',		'stop')
 	#print("randomly generated actions: " + str(actions))
 	#print("number of actions: " + str(actions_length))
 	#action_iter = 0
+	"""
+	
+	speed = 0.8
+	intensity = 0.9
+	slight_left = action_list['tilt left'](90.0, intensity, speed)
+	slight_right = action_list['tilt right'](90.0, intensity, speed)
+	slight_down = action_list['look down'](90.0, intensity, speed)
+	slight_up = action_list['look up'](90.0, intensity, speed)
+	down_left = [[sum(z) for z in zip(slight_left[x],slight_down[x])] for x in range(len(slight_down))]
+	return_from_left = [[-elem for elem in down_left[x]] for x in range(len(down_left))]
+	
+	down_right = [[sum(z) for z in zip(slight_right[x],slight_down[x])] for x in range(len(slight_down))]
+	return_from_right = [[-elem for elem in down_right[x]] for x in range(len(down_right))]
+	
+	full_left = down_left + return_from_left
+	full_right = down_right + return_from_right
+	#print(full_left)
+	#print(full_right)
+	
+	background = list()
+	random.seed(10)
+	while len(background) < len(actions):
+		drv = random.randint(0,1)
+		print(drv)
+		if drv == 0:
+			movement = full_left
+		else:
+			movement = full_right
+		background = background + movement
+	#print(full_motion)
+	#for elem in background: print(elem)
+	
+	#now add actions
+	movements = [[0, 0, 0, 0] for x in range(actions_length)]
+	for i,element in enumerate(actions):
+		if element[2] != 'none' and element[2] != 'stop':
+			movement = action_list[element[2]](90.0, 1.8, 1.6)
+			#print(movement)
+			reverse = [[-x for x in elem] for elem in movement]
+			#for elem in movement:print(elem)
+			#for elem in reverse: print(elem)
+			
+			#print(movement)
+			for j in range(len(movement)):
+				movements[i-len(movement) + j + 10] = copy.copy(movement[j])
+			for j in range(len(reverse)):
+				movements[i + j + 10] = reverse[j]
 	
 	
+	movements += [[0,0,0,0]]*(len(actions) - len(movements))
+	
+	del background[len(actions):]
+	del movements[len(actions):]
+	#print(len(actions))
+	#print(len(background))
+	#print(len(movements))
+	
+	full_motion = list()
+	if choice == '-a':
+		full_motion = copy.deepcopy(movements)
+	elif choice == '-c':
+		full_motion = copy.deepcopy(background)
+		#print(full_motion)
+		#print(len(full_motion))
+		#print(len(movements))
+		#print(zip(full_motion, movements))
+		full_motion = [[pair[0][0]+pair[1][0], pair[0][1]+pair[1][1], pair[0][2]+pair[1][2], pair[0][3]+pair[1][3]] for pair in zip(full_motion, movements)]
+	else:
+		full_motion = copy.deepcopy(background)
+	
+	#for elem in background: print(elem)
+	#for elem in movements: print(elem)
+	#for elem in full_motion:print(elem)
+	print(full_motion)
 	
 	#stream until no more data (i.e. wav file is done)
 	#start_time = clock()
 	beginning_time = time()
 	chunk_counter = 0
 	
-	current_state = ['stop', 'stop', 'stop']
+	current_state = list(default_pos)
+	#print(current_state)
 	
 	while len(data) == CHUNK*sample_width:
-		valence,intensity,action = actions[chunk_counter]
+		#valence,intensity,action = action[chunk_counter]
 		#print(valence, intensity, action)
 		
+		#only background
+		"""
+		panD = full_motion[chunk_counter][0]
+		tiltD = full_motion[chunk_counter][1]
+		rollD = full_motion[chunk_counter][2]
+		bopD = full_motion[chunk_counter][3]
+		"""
+		
+		#only movements
+		panD = full_motion[chunk_counter][0]
+		tiltD = full_motion[chunk_counter][1]
+		rollD = full_motion[chunk_counter][2]
+		bopD = full_motion[chunk_counter][3]
+		
+		#print(current_state)
+		#print([panD, tiltD, rollD, bopD])
+		pan = current_state[0] + panD
+		tilt = current_state[1] + tiltD
+		roll = current_state[2] + rollD
+		bop = current_state[3] + bopD
+		
+		if pan > 160:
+			pan = 160
+		if pan < 20:
+			pan = 20
+		if tilt > 180:
+			tilt = 180
+		if tilt < 0:
+			tilt = 0
+		if roll > 180:
+			roll = 180
+		if roll < 0:
+			roll = 0
+		
+		current_state = [pan, tilt, roll, 0]
+		#print(current_state)
 		chunk_counter +=1
 		#print("chunks read: %d" %(chunk_counter))
 		
@@ -125,6 +244,7 @@ def main():
 			audiopub.publish(message)
 			#print "frequency: %f Hz loudness %f log(amp)" % (frequency, loudness)
 		"""
+		"""
 		if (valence, intensity, action) != ('none', 'none', 'none'):
 			message = AudioMsg()
 			
@@ -145,13 +265,23 @@ def main():
 			else:
 				current_state[2] = action
 			
-			
+		
 			message.valence = valence 
 			message.intensity = intensity
 			message.action = action
-			
+		"""
+		message = ControllerMsg()
+		message.ID = 0
+		message.pan = pan
+		message.tilt = tilt
+		message.roll = roll
+		message.bop = bop
+		
+		#rospy.loginfo('Sending message: pan=' + str(pan) + ' tilt=' + str(tilt) + ' roll=' + str(roll) + ' bop=' + str(bop))
+		"""
 			rospy.loginfo('Sending message: valence=' + str(valence) + ' intensity=' + str(intensity) + ' action=' + str(action))
-			audio_pub.publish(message)
+		"""
+		pub.publish(message)
 		
 		#play audio after it has been published. will have to work out creating a larger delay
 		#end_time = clock() - start_time
